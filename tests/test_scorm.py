@@ -1,4 +1,4 @@
-from scorm.scorm import jinja_template
+from scorm_package.scorm import jinja_template
 def test_template():
 
     expected = """
