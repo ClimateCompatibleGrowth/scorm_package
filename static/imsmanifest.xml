@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest identifier="{{title}}" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lom="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1" xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+<manifest identifier="Lecture Block {{block}}" xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2" xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lom="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1" xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
 <metadata>
 <schema>ADL SCORM</schema>
 <schemaversion>1.2</schemaversion>
 <lom:lom>
 <lom:general>
 <lom:title>
-<lom:langstring>{{title}}</lom:langstring>
+<lom:langstring>Lecture Block {{block}}</lom:langstring>
 </lom:title>
 </lom:general>
 <lom:educational>
@@ -16,19 +16,17 @@
 </lom:educational>
 </lom:lom>
 </metadata>
-<organizations default="{{title}}_organization">
-  <organization identifier="{{title}}_organization">
-  <title>{{title}}</title>
-    <item identifier="item" identifierref="resource">
-      <title>{{title}}</title>
-    </item>
+<organizations default="lecture_block_{{block}}_organization">
+  <organization identifier="lecture_block_{{block}}_organization">
+  <title>Lecture Block {{block}}</title>{% for resource in resourcelist %}
+    <item identifier="item_{{loop.index}}" identifierref="lecture_{{block}}_{{loop.index}}" isvisible="true">
+      <title>Mini Lecture {{block}}.{{loop.index}}</title>
+    </item>{% endfor %}
   </organization>
 </organizations>
-<resources>
-    <resource identifier="resource" type="webcontent" adlcp:scormtype="sco" href="{{resource}}">
-      {% for resource in resourcelist %}
-            <file href="{{resource}}" />
-      {% endfor %}
-    </resource>
+<resources>{% for resource in resourcelist %}
+  <resource identifier="lecture_{{block}}_{{loop.index}}" type="webcontent" adlcp:scormtype="sco" href="{{resource}}">
+    <file href="{{resource}}"/>
+  </resource>{% endfor %}
 </resources>
 </manifest>

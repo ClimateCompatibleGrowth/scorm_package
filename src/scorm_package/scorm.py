@@ -12,21 +12,6 @@ from typing import List
 logger = logging.getLogger()
 
 
-def argumentParser():
-    """
-    Creates a -h / --help flag that describes what the user is required to do, sets a requirement for two arguments to run the script, 1) scorm package name and 2) the name of a html file.
-    """
-    parser = argparse.ArgumentParser(add_help=True,
-                                     description="Creates a SCORM package from a folder of HTML files")
-
-    parser.add_argument('package_name', action="store",
-                        help='Scorm package name')
-    parser.add_argument('html_file_name', action="store",
-                        help='Path to the folder containing HTML files to package')
-
-    return parser.parse_args()
-
-
 def create_directories(dirName):
     """
     Create directories
@@ -103,13 +88,19 @@ def jinja_template(dirName, all_resources, templatefile):
     with open(templatefile) as f:
         mytext = f.read()
 
-    template = Template(mytext)
-    output = template.render(resourcelist=all_resources, title=dirName)
+    output = render_template(mytext, all_resources, dirName)
 
     # TODO: Move this file operation outside of the function
     filepath = os.path.join(dirName, "imsmanifest.xml")
     with open(filepath, 'w') as outfile:
       outfile.write(output)
+
+def render_template(mytext: str, all_resources: List, dirName: str) -> str:
+    """
+    """
+    template = Template(mytext)
+    output = template.render(resourcelist=all_resources, block=dirName)
+    return output
 
 #----------------------------
 #Zip folder to create scorm package
@@ -180,7 +171,7 @@ def main():
 
     args = argumentParser()
     dirName=args.package_name
-    htmlresource=args.html_file_name
+    html_resource=args.html_resource
 
     subDirName = create_directories(dirName)
 
@@ -188,17 +179,33 @@ def main():
 
     copy_files(dirName=dirName, static='static/')
 
-    copy_resources(subDirName=subDirName, resfiles=htmlresource)
+    copy_resources(subDirName=subDirName, resfiles=html_resource)
 
     resources = resourcelist(resource_content)
 
-    jinja_template(dirName = dirName,
-                   all_resources =resources,
-                   templatefile = "static/imsmanifest.xml")
+    jinja_template(dirName=dirName,
+                   all_resources=resources,
+                   templatefile="static/imsmanifest.xml")
 
     zip_directory(dirName = dirName)
 
     delete_directory(dirName = dirName)
+
+
+def argumentParser():
+    """
+    Creates a -h / --help flag that describes what the user is required to do, sets a requirement for two arguments to run the script, 1) scorm package name and 2) the name of a html file.
+    """
+    parser = argparse.ArgumentParser(add_help=True,
+                                     description="Creates a SCORM package from a folder of HTML files")
+
+    parser.add_argument('package_name', action="store",
+                        help="Scorm package name e.g. 'Lecture Block 1'")
+    parser.add_argument('html_resource', action="store",
+                        help='Path to the folder containing HTML files to package')
+
+    return parser.parse_args()
+
 
 # Call the main function
 if __name__ == "__main__":
