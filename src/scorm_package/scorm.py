@@ -7,6 +7,7 @@ import zipfile
 import shutil
 import argparse
 import logging
+from typing import List
 
 logger = logging.getLogger()
 
@@ -83,13 +84,13 @@ def copy_resources(subDirName, resfiles):
       logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
       exit(1)
 
-def resourcelist(resource_content):
+def resourcelist(resource_content) -> List[str]:
     """
     Gets all the file paths for the content of the newly created sub-directory "/res"
-     which is used in jinj_template which edits the imsmanifest.xml file.
+     which is used in jinja_template which edits the imsmanifest.xml file.
     """
-    all_resources = os.listdir (resource_content)
-    output = ["res/" + f for f in all_resources ]
+    all_resources = os.listdir(resource_content)
+    output = [os.path.join("res", f) for f in all_resources ]
     return output
 
 def jinja_template(dirName, htmlfile, all_resources, templatefile):
@@ -102,11 +103,11 @@ def jinja_template(dirName, htmlfile, all_resources, templatefile):
     mytext = f.read()
     template = Template(mytext)
 
-    output = template.render(starting_resource = htmlfile, resourcelist =  all_resources, title=dirName)
+    output = template.render(starting_resource=htmlfile, resourcelist=all_resources, title=dirName)
 
-    outfile = open(dirName +'/imsmanifest.xml', 'w')
-    outfile.write(output)
-    outfile.close()
+    filepath = os.path.join(dirName, "imsmanifest.xml")
+    with open(filepath, 'w') as outfile:
+      outfile.write(output)
 
 #----------------------------
 #Zip folder to create scorm package

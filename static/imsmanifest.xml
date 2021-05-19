@@ -17,15 +17,15 @@
 </lom:lom>
 </metadata>
 <organizations default="{{title}}_organization">
-<organization identifier="{{title}}_organization">
-<title>{{title}}</title>
-<item identifier="item" identifierref="resource">
-<title>{{title}}</title>
-</item>
-</organization>
+  <organization identifier="{{title}}_organization">
+  <title>{{title}}</title>
+    <item identifier="item" identifierref="resource">
+      <title>{{title}}</title>
+    </item>
+  </organization>
 </organizations>
 <resources>
-    <resource identifier="resource" type="webcontent" adlcp:scormtype="sco" href="{{starting_resource}}">
+    <resource identifier="resource" type="webcontent" adlcp:scormtype="sco" href="{{resource}}">
       {% for resource in resourcelist %}
             <file href="{{resource}}" />
       {% endfor %}
