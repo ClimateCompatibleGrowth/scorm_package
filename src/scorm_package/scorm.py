@@ -9,8 +9,12 @@ import argparse
 import logging
 from typing import List
 
+import pkg_resources
+
+
 logger = logging.getLogger()
 
+logging.basicConfig(level=logging.DEBUG)
 
 def create_directories(dirName):
     """
@@ -21,18 +25,18 @@ def create_directories(dirName):
     try:
         # Create target Directory
         os.mkdir(dirName)
-        logger("Directory " , dirName ,  " Created ")
+        logger.info("Directory %s Created", dirName)
     except FileExistsError:
-        logger("Directory " , dirName ,  " already exists")
+        logger.info("Directory %s already exists", dirName)
         exit(1)
     subDirName = dirName+'/res'
 
     # Create target directory & all intermediate directories if don't exists
     try:
         os.makedirs(subDirName)
-        logger("Directory " , subDirName ,  " Created ")
+        logger.info("Directory %s Created", subDirName)
     except FileExistsError:
-        logger("Directory " , subDirName ,  " already exists")
+        logger.info("Directory %s already exists", subDirName)
     return subDirName
 
 
@@ -40,29 +44,25 @@ def copy_files(dirName, static):
     """
     Copy xsd files from static folder to named directory
     """
-
-    fromDirectory = static
+    fromDirectory = pkg_resources.resource_filename(__name__, static)
     toDirectory = dirName
-    try:
-        copy_tree(fromDirectory, toDirectory)
-        logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
-    except FileExistsError:
-        logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
-        exit(1)
+    do_a_copy(fromDirectory, toDirectory)
 
 
 def copy_resources(subDirName, resfiles):
     """
     Copy resource files from ``resfiles`` folder to named directory ``subDirName``
     """
-
     fromDirectory = resfiles
     toDirectory = subDirName
+    do_a_copy(fromDirectory, toDirectory)
+
+def do_a_copy(from_dir, to_dir):
     try:
-        copy_tree(fromDirectory, toDirectory)
-        logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
+        copy_tree(from_dir, to_dir)
+        logger.info("Content Copied From %s to %s Successfully", from_dir, to_dir)
     except FileExistsError:
-        logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
+        logger.info("Content Failed to Copy From %s to %s", from_dir, to_dir)
         exit(1)
 
 def resourcelist(resource_content) -> List[str]:
@@ -71,35 +71,52 @@ def resourcelist(resource_content) -> List[str]:
      which is used in jinja_template which edits the imsmanifest.xml file.
     """
     all_resources = os.listdir(resource_content)
-    output = [os.path.join("res", f) for f in all_resources ]
-    return output
+    output = [os.path.join("res", f) for f in all_resources if f.endswith(".html")]
+    return sorted(output)
 
-def jinja_template(dirName, all_resources, templatefile):
+def jinja_template(dirName: str, all_resources: List, templatefile: str, block: int):
     """Edits the imsmanifest.xml file, adds a list of the resource files to the xml.
 
     Arguments
     ---------
-    dirName
-    all_resources
-    templatefile
+    dirName : str
+        The destination folder for the SCORM package
+    all_resources : list
+        A list of html file names in the res folder of the package. These
+        are assumed to be ordered e.g. from 1 to 4
+    templatefile : str
+        The text of the Jinja2 template
+    block : int
+        The number of the lecture block
 
     """
     # TODO: Move this file operation outside of the function
     with open(templatefile) as f:
         mytext = f.read()
 
-    output = render_template(mytext, all_resources, dirName)
+    output = render_template(mytext, all_resources, block)
 
     # TODO: Move this file operation outside of the function
     filepath = os.path.join(dirName, "imsmanifest.xml")
     with open(filepath, 'w') as outfile:
       outfile.write(output)
 
-def render_template(mytext: str, all_resources: List, dirName: str) -> str:
+def render_template(mytext: str, all_resources: List, block: int) -> str:
     """
+
+    Arguments
+    ---------
+    mytext : str
+        The text of the Jinja2 template
+    all_resources : list
+        A list of html file names in the res folder of the package. These
+        are assumed to be ordered e.g. from 1 to 4
+    block : int
+        The number of the lecture block
+
     """
     template = Template(mytext)
-    output = template.render(resourcelist=all_resources, block=dirName)
+    output = template.render(resourcelist=all_resources, block=block)
     return output
 
 #----------------------------
@@ -137,9 +154,9 @@ def zip_directory(dirName):
     filePaths = retrieve_file_paths(dir_name)
 
     # loggering the list of all files to be zipped
-    logger('The following list of files will be zipped:')
+    logger.info('The following list of files will be zipped:')
     for fileName in filePaths:
-      logger(fileName)
+      logger.info(fileName)
 
     # writing files to a zipfile
     zip_file = zipfile.ZipFile(dir_name+'.zip', 'w')
@@ -148,7 +165,7 @@ def zip_directory(dirName):
       for file in filePaths:
         zip_file.write(file)
 
-      logger(dir_name+'.zip file is created successfully!')
+      logger.info(dir_name+'.zip file is created successfully!')
 
 
 def delete_directory(dirName):
@@ -162,9 +179,9 @@ def delete_directory(dirName):
     try:
         # Delete target Directory
         shutil.rmtree(dirName, ignore_errors=False, onerror=None)
-        logger("Directory " , dirName ,  " Deleted ")
+        logger.info("Directory %s Deleted ", dirName)
     except FileExistsError:
-        logger("Directory " , dirName ,  " Failed to Delete")
+        logger.info("Directory %s Failed to Delete", dirName)
 
 
 def main():
@@ -175,17 +192,17 @@ def main():
 
     subDirName = create_directories(dirName)
 
+    copy_files(dirName, 'static')
+    copy_resources(subDirName, html_resource)
+
     resource_content = os.path.join(dirName, 'res')
-
-    copy_files(dirName=dirName, static='static/')
-
-    copy_resources(subDirName=subDirName, resfiles=html_resource)
-
     resources = resourcelist(resource_content)
 
-    jinja_template(dirName=dirName,
-                   all_resources=resources,
-                   templatefile="static/imsmanifest.xml")
+    templatefile = pkg_resources.resource_filename(__name__, "static/imsmanifest.xml")
+    jinja_template(dirName,
+                   resources,
+                   templatefile,
+                   args.lecture_block_number)
 
     zip_directory(dirName = dirName)
 
@@ -203,6 +220,8 @@ def argumentParser():
                         help="Scorm package name e.g. 'Lecture Block 1'")
     parser.add_argument('html_resource', action="store",
                         help='Path to the folder containing HTML files to package')
+    parser.add_argument('lecture_block_number', action="store", type=int,
+                        help="The number of the lecture block")
 
     return parser.parse_args()
 

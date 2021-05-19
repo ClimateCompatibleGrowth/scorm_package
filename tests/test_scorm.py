@@ -1,4 +1,6 @@
-from scorm_package.scorm import render_template
+from scorm_package.scorm import render_template, resourcelist
+import os
+
 def test_template_render_organisations():
 
     expected = """
@@ -59,4 +61,10 @@ def test_template_render_resources():
     all_resources = ['res/Lecture_1.1.html', 'res/Lecture_1.2.html']
     actual = render_template(template, all_resources, block)
 
+    assert actual == expected
+
+def test_resource_list():
+
+    actual = resourcelist(os.path.join('tests', 'fixtures', 'resourcelist'))
+    expected = ['res/1.html', 'res/2.html', 'res/3.html']
     assert actual == expected
