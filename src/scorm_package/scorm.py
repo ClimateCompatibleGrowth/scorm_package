@@ -16,17 +16,13 @@ def argumentParser():
     """
     Creates a -h / --help flag that describes what the user is required to do, sets a requirement for two arguments to run the script, 1) scorm package name and 2) the name of a html file.
     """
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser(add_help=True,
+                                     description="Creates a SCORM package from a folder of HTML files")
 
-    parser.add_argument('-h', '--help', action='help',
-                        help=("To run this script please provide two arguments: first argument  "
-                              "should be your scorm package name, second argument should be your "
-                              "html file name. Note: Any current zipped folder in the run directory "
-                              "with the same scorm package name will be overwritten."))
     parser.add_argument('package_name', action="store",
-                        help='Please provide your scorm package name as the first argument')
+                        help='Scorm package name')
     parser.add_argument('html_file_name', action="store",
-                        help='Please provide your html file name as the second argument')
+                        help='Path to the folder containing HTML files to package')
 
     return parser.parse_args()
 
@@ -63,26 +59,26 @@ def copy_files(dirName, static):
     fromDirectory = static
     toDirectory = dirName
     try:
-      copy_tree(fromDirectory, toDirectory)
-      logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
+        copy_tree(fromDirectory, toDirectory)
+        logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
     except FileExistsError:
-      logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
-      exit(1)
+        logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
+        exit(1)
 
 
 def copy_resources(subDirName, resfiles):
     """
-    Copy resource files from resource folder to named directory sub folder res
+    Copy resource files from ``resfiles`` folder to named directory ``subDirName``
     """
 
     fromDirectory = resfiles
     toDirectory = subDirName
     try:
-      copy_tree(fromDirectory, toDirectory)
-      logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
+        copy_tree(fromDirectory, toDirectory)
+        logger("Content Copied From " , fromDirectory ,"to", toDirectory,  " Successfully ")
     except FileExistsError:
-      logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
-      exit(1)
+        logger("Content Failed to Copy From " , fromDirectory ,"to", toDirectory,  "")
+        exit(1)
 
 def resourcelist(resource_content) -> List[str]:
     """
@@ -93,18 +89,24 @@ def resourcelist(resource_content) -> List[str]:
     output = [os.path.join("res", f) for f in all_resources ]
     return output
 
-def jinja_template(dirName, htmlfile, all_resources, templatefile):
-    """
-    Edits the imsmanifest.xml file, adds a list of the resource files to the xml.
-    """
+def jinja_template(dirName, all_resources, templatefile):
+    """Edits the imsmanifest.xml file, adds a list of the resource files to the xml.
 
-    f = open(templatefile)
+    Arguments
+    ---------
+    dirName
+    all_resources
+    templatefile
 
-    mytext = f.read()
+    """
+    # TODO: Move this file operation outside of the function
+    with open(templatefile) as f:
+        mytext = f.read()
+
     template = Template(mytext)
+    output = template.render(resourcelist=all_resources, title=dirName)
 
-    output = template.render(starting_resource=htmlfile, resourcelist=all_resources, title=dirName)
-
+    # TODO: Move this file operation outside of the function
     filepath = os.path.join(dirName, "imsmanifest.xml")
     with open(filepath, 'w') as outfile:
       outfile.write(output)
@@ -178,21 +180,21 @@ def main():
 
     args = argumentParser()
     dirName=args.package_name
-    htmlResource=args.html_file_name
+    htmlresource=args.html_file_name
 
     subDirName = create_directories(dirName)
 
-    resource_content = dirName + '/res/'
+    resource_content = os.path.join(dirName, 'res')
 
-    copy_files(dirName = dirName, static ='static/')
+    copy_files(dirName=dirName, static='static/')
 
-    copy_resources(subDirName = subDirName, resfiles = 'resources/')
+    copy_resources(subDirName=subDirName, resfiles=htmlresource)
 
     resources = resourcelist(resource_content)
 
-    jinja_template(dirName = dirName, htmlfile = 'res/' + htmlResource,
-                all_resources =resources,
-                templatefile = "static/imsmanifest.xml")
+    jinja_template(dirName = dirName,
+                   all_resources =resources,
+                   templatefile = "static/imsmanifest.xml")
 
     zip_directory(dirName = dirName)
 
