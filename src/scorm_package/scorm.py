@@ -16,7 +16,7 @@ logger = logging.getLogger()
 
 logging.basicConfig(level=logging.DEBUG)
 
-def create_directories(dirName):
+def create_directories(directory_name):
     """
     Create directories
     """
@@ -24,20 +24,20 @@ def create_directories(dirName):
 
     try:
         # Create target Directory
-        os.mkdir(dirName)
-        logger.info("Directory %s Created", dirName)
+        os.mkdir(directory_name)
+        logger.info("Directory %s Created", directory_name)
     except FileExistsError:
-        logger.info("Directory %s already exists", dirName)
+        logger.info("Directory %s already exists", directory_name)
         exit(1)
-    subDirName = dirName+'/res'
+    subdirectory_name = os.path.join(directory_name, 'res')
 
     # Create target directory & all intermediate directories if don't exists
     try:
-        os.makedirs(subDirName)
-        logger.info("Directory %s Created", subDirName)
+        os.makedirs(subdirectory_name)
+        logger.info("Directory %s Created", subdirectory_name)
     except FileExistsError:
-        logger.info("Directory %s already exists", subDirName)
-    return subDirName
+        logger.info("Directory %s already exists", subdirectory_name)
+    return subdirectory_name
 
 
 def copy_files(dirName, static):
@@ -125,13 +125,13 @@ def render_template(mytext: str, all_resources: List, block: int) -> str:
 
 def retrieve_file_paths(dirName):
     """
-    Retrieves the filepath for the directoy being zipped.
+    Retrieves the filepath for the directory being zipped.
     """
     # setup file paths variable
     filePaths = []
 
     # Read all directory, subdirectories and file lists
-    for root, directories, files in os.walk(dirName):
+    for root, _, files in os.walk(dirName):
       for filename in files:
           # Create the full filepath by using os module.
           filePath = os.path.join(root, filename)
@@ -141,31 +141,32 @@ def retrieve_file_paths(dirName):
     return filePaths
 
 
-def zip_directory(dirName):
+def zip_directory(dir_name):
     """
-    The zip_directory function zips the content of the created score_package folder.
+    The zip_directory function zips the content of the created scorm_package folder.
+
+    Arguments
+    ---------
+    dir_name: str
+        The name of the dirctory to zip
     """
 
-  # Assign the name of the directory to zip
-    dir_name = dirName
-
-    # Call the function to retrieve all files and folders of the assigned directory
-
+    # Retrieve all files and folders of the assigned directory
     filePaths = retrieve_file_paths(dir_name)
 
-    # loggering the list of all files to be zipped
+    # logging the list of all files to be zipped
     logger.info('The following list of files will be zipped:')
     for fileName in filePaths:
-      logger.info(fileName)
+        logger.info(fileName)
 
     # writing files to a zipfile
-    zip_file = zipfile.ZipFile(dir_name+'.zip', 'w')
-    with zip_file:
+    with zipfile.ZipFile(os.path.join(dir_name, dir_name + '.zip'), 'w') as zip_file:
       # writing each file one by one
-      for file in filePaths:
-        zip_file.write(file)
+      for file_name in filePaths:
+        arc_name = os.path.relpath(file_name, dir_name)
+        zip_file.write(file_name, arc_name)
 
-      logger.info(dir_name+'.zip file is created successfully!')
+      logger.info(f"{dir_name}.zip file was created successfully!")
 
 
 def delete_directory(dirName):
@@ -187,26 +188,26 @@ def delete_directory(dirName):
 def main():
 
     args = argumentParser()
-    dirName=args.package_name
-    html_resource=args.html_resource
+    directory_name = args.directory_name
+    html_resource = args.html_resource
 
-    subDirName = create_directories(dirName)
+    subdirectory_name = create_directories(directory_name)
 
-    copy_files(dirName, 'static')
-    copy_resources(subDirName, html_resource)
+    copy_files(directory_name, 'static')
+    copy_resources(subdirectory_name, html_resource)
 
-    resource_content = os.path.join(dirName, 'res')
+    resource_content = os.path.join(directory_name, 'res')
     resources = resourcelist(resource_content)
 
     templatefile = pkg_resources.resource_filename(__name__, "static/imsmanifest.xml")
-    jinja_template(dirName,
+    jinja_template(directory_name,
                    resources,
                    templatefile,
                    args.lecture_block_number)
 
-    zip_directory(dirName = dirName)
+    zip_directory(directory_name)
 
-    delete_directory(dirName = dirName)
+    delete_directory(directory_name)
 
 
 def argumentParser():
@@ -216,10 +217,10 @@ def argumentParser():
     parser = argparse.ArgumentParser(add_help=True,
                                      description="Creates a SCORM package from a folder of HTML files")
 
-    parser.add_argument('package_name', action="store",
-                        help="Scorm package name e.g. 'Lecture Block 1'")
+    parser.add_argument('directory_name', action="store",
+                        help="Scorm package name e.g. `lecture_block_01`")
     parser.add_argument('html_resource', action="store",
-                        help='Path to the folder containing HTML files to package')
+                        help='Path to the folder containing HTML files to package e.g. `lecture_01`')
     parser.add_argument('lecture_block_number', action="store", type=int,
                         help="The number of the lecture block")
 
