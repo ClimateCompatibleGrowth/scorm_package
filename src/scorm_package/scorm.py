@@ -156,14 +156,13 @@ def zip_directory(dir_name):
 
     # logging the list of all files to be zipped
     logger.info('The following list of files will be zipped:')
-    for fileName in filePaths:
-        logger.info(fileName)
 
     # writing files to a zipfile
-    with zipfile.ZipFile(os.path.join(dir_name, dir_name + '.zip'), 'w') as zip_file:
+    with zipfile.ZipFile(dir_name + '.zip', 'w') as zip_file:
       # writing each file one by one
       for file_name in filePaths:
         arc_name = os.path.relpath(file_name, dir_name)
+        logger.info(f"{file_name}: {arc_name}")
         zip_file.write(file_name, arc_name)
 
       logger.info(f"{dir_name}.zip file was created successfully!")

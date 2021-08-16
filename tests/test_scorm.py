@@ -1,4 +1,4 @@
-from scorm_package.scorm import render_template, resourcelist
+from scorm_package.scorm import render_template, resourcelist, retrieve_file_paths
 import os
 
 def test_template_render_organisations():
