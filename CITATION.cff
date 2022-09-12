@@ -1,9 +1,11 @@
-cff-version: 1.1.0
+cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: Will
-  given-names: Usher
-  orcid: https://orcid.org/0000-0001-9367-1791
-title: ClimateCompatibleGrowth/scorm_package: SCORM Package
+- family-names: "Will"
+  given-names: "Usher"
+  orcid: "https://orcid.org/0000-0001-9367-1791"
+title: "SCORM Package"
+doi: 10.5281/zenodo.7071777
+url: "https://github.com/ClimateCompatibleGrowth/scorm_package"
 version: v0.1
 date-released: 2022-09-12
